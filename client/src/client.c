@@ -16,6 +16,12 @@ int main(void)
 
 	logger = iniciar_logger();
 
+	logger = log_create("tp0.log", "primer log", 1, LOG_LEVEL_INFO);
+
+	log_info (logger, "Soy un log");
+
+	//log_destroy (logger);
+
 	// Usando el logger creado previamente
 	// Escribi: "Hola! Soy un log"
 
@@ -24,15 +30,36 @@ int main(void)
 
 	config = iniciar_config();
 
+	//config = config_create("tp0/SistOp-TP0-repository/client/cliente.config");
+	config = config_create("/home/utnso/Desktop/tp0/SistOp-TP0-repository/client/cliente.config");
+
+	if (config == NULL){
+		
+		exit(0);
+	} 
+
+	valor = config_get_string_value(config, "CLAVE" );
+	ip = config_get_string_value(config, "IP" );
+	puerto = config_get_string_value(config, "PUERTO" );
+
+	log_info (logger, valor);
+	
+	//log_destroy (logger);
+	//config_destroy(config);
+
 	// Usando el config creado previamente, leemos los valores del config y los 
 	// dejamos en las variables 'ip', 'puerto' y 'valor'
 
 	// Loggeamos el valor de config
 
 
+
 	/* ---------------- LEER DE CONSOLA ---------------- */
 
 	leer_consola(logger);
+
+	//log_destroy (logger);
+
 
 	/*---------------------------------------------------PARTE 3-------------------------------------------------------------*/
 
@@ -42,6 +69,8 @@ int main(void)
 	conexion = crear_conexion(ip, puerto);
 
 	// Enviamos al servidor el valor de CLAVE como mensaje
+
+	enviar_mensaje(valor, conexion);
 
 	// Armamos y enviamos el paquete
 	paquete(conexion);
@@ -71,11 +100,23 @@ void leer_consola(t_log* logger)
 	char* leido;
 
 	// La primera te la dejo de yapa
-	leido = readline("> ");
+	leido = readline(">");
+
+	while (1){
+
+		if (!strcmp(leido, "")){
+			break;
+		}
+
+		log_info(logger, leido);
+
+		leido = readline(">");
+	}
+
+	free(leido);
 
 	// El resto, las vamos leyendo y logueando hasta recibir un string vacío
-
-
+	
 	// ¡No te olvides de liberar las lineas antes de regresar!
 
 }
@@ -87,14 +128,35 @@ void paquete(int conexion)
 	t_paquete* paquete;
 
 	// Leemos y esta vez agregamos las lineas al paquete
+	paquete = crear_paquete();
 
+	while (1){
+		
+		leido = readline(">");
 
-	// ¡No te olvides de liberar las líneas y el paquete antes de regresar!
-	
+		if (!strcmp(leido, "")){
+			break;
+		}
+
+		agregar_a_paquete(paquete, leido, sizeof(leido) +1 );
+
+	}
+
+	free(leido);
+
+	enviar_paquete(paquete,conexion);
+
+	eliminar_paquete(paquete);
+
+	return;
 }
 
 void terminar_programa(int conexion, t_log* logger, t_config* config)
 {
 	/* Y por ultimo, hay que liberar lo que utilizamos (conexion, log y config) 
 	  con las funciones de las commons y del TP mencionadas en el enunciado */
+
+	log_destroy (logger);
+	config_destroy(config);
+	liberar_conexion(conexion);
 }
